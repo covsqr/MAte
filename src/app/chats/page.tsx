@@ -1,0 +1,89 @@
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import styles from "./chats.module.css";
+import { ChevronLeft, MessageCircle, Settings, User } from "lucide-react";
+
+export default async function ChatsPage() {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const companions = await prisma.companion.findMany({
+    where: { userId: session.userId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 1
+      },
+      _count: {
+        select: {
+          messages: {
+            where: { sender: "companion", isRead: false }
+          }
+        }
+      }
+    }
+  });
+
+  return (
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <Link href="/">
+          <ChevronLeft className={styles.icon} />
+        </Link>
+        <span className={styles.title}>채팅 목록</span>
+        <Settings className={styles.icon} />
+      </header>
+
+      <div className={styles.chatList}>
+        {companions.map(companion => {
+          const lastMsg = companion.messages[0];
+          const profileImage = companion.gender === 'female'
+            ? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80"
+            : "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80";
+
+          return (
+            <Link key={companion.id} href={`/?companionId=${companion.id}`} className={styles.chatItem}>
+              <img src={profileImage} alt="profile" className={styles.profilePic} />
+              <div className={styles.chatInfo}>
+                <div className={styles.chatHeader}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className={styles.name}>{companion.name}</span>
+                    {companion._count.messages > 0 && (
+                      <span className={styles.unreadBadge}>{companion._count.messages}</span>
+                    )}
+                  </div>
+                  <span className={styles.time}>
+                    {lastMsg ? new Date(lastMsg.createdAt).toLocaleDateString() : ""}
+                  </span>
+                </div>
+                <p className={styles.lastMessage}>
+                  {lastMsg ? lastMsg.text : "첫 대화를 시작해보세요!"}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+        {companions.length === 0 && (
+          <div className={styles.emptyState}>
+            <p>아직 대화 중인 메이트가 없어요.</p>
+            <Link href="/setup" className={styles.setupBtn}>메이트 만들기</Link>
+          </div>
+        )}
+      </div>
+
+      <nav className={styles.bottomNav}>
+        <Link href="/chats" className={styles.navItemActive}>
+          <MessageCircle />
+          <span>채팅</span>
+        </Link>
+        <Link href="/recharge" className={styles.navItem}>
+          <User />
+          <span>포인트</span>
+        </Link>
+      </nav>
+    </div>
+  );
+}

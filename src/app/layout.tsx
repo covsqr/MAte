@@ -4,8 +4,16 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "MAte - AI Partner",
   description: "당신만의 가상 공간 속 연인",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
 };
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+import BackgroundPoller from "@/components/BackgroundPoller";
 
 export default function RootLayout({
   children,
@@ -15,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
+        <BackgroundPoller />
         <div style={{
           width: "100%",
           maxWidth: "var(--app-max-width)",

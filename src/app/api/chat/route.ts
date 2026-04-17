@@ -14,6 +14,9 @@ export async function POST(req: Request) {
 
     const now = new Date();
     
+    // 메시지 길이에 따른 호감도 가중치 부여 (최소 1, 10자 이상이면 2)
+    const intimacyGain = message.length >= 10 ? 2 : 1;
+
     // 유저의 메시지 DB 저장 (조용하게 저장만 함)
     const savedMessage = await prisma.message.create({
       data: {
@@ -24,7 +27,7 @@ export async function POST(req: Request) {
       }
     });
 
-    // 마지막 상호작용 시간 갱신
+    // 호감도 업데이트 및 마지막 상호작용 시간 갱신
     await prisma.companion.update({
       where: { id: companionId },
       data: { lastInteractionAt: now }

@@ -9,12 +9,13 @@ datasource db {
 
 model User {
   id        String   @id @default(cuid())
-  username  String   @unique
+  userId    String   @unique
   password  String
-  phone     String?
-  email     String?  @unique
   name      String?
-  points    Int      @default(5000) // 1포인트 = 10원. 5000포인트 = 5만원
+  age       Int?
+  location  String?
+  hobbies   String?
+  points    Int      @default(5000)
   createdAt DateTime @default(now())
 
   companions Companion[]
@@ -30,6 +31,8 @@ model Companion {
   personality String 
   interests   String 
   relationship String 
+  speechStyle String   @default("반말") // "반말" 또는 "존댓말"
+  preferredCallSign String // 나를 어떻게 부를지 (오빠, 자기야 등)
   intimacy    Int      @default(0)
   lastInteractionAt DateTime @default(now())
   startedAt   DateTime @default(now())
@@ -45,6 +48,7 @@ model Message {
   companionId String
   sender      String   // "me" or "companion"
   text        String
+  imageUrl    String?  // 사진 전송 지원용
   isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
 

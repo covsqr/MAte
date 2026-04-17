@@ -4,14 +4,14 @@ import { hashPassword, createSession } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
-    const { username, password, phone, name } = await req.json();
+    const { username, password, name } = await req.json();
 
     if (!username || !password) {
       return NextResponse.json({ error: "아이디와 비밀번호를 입력해주세요." }, { status: 400 });
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { username }
+      where: { userId: username }
     });
 
     if (existingUser) {
@@ -22,9 +22,8 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.create({
       data: {
-        username,
+        userId: username,
         password: hashedPassword,
-        phone,
         name: name || "사용자",
       }
     });

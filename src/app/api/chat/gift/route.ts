@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import OpenAI from 'openai';
 import { getSession } from '@/lib/auth';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 export async function POST(req: Request) {
   try {
@@ -20,6 +15,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "포인트가 부족합니다." }, { status: 400 });
     }
 
+    // 트랜잭션: 포인트 차감, 호감도 상승, 선물 메시지 기록
+    // 응답은 여기서 생성하지 않고 sync API가 대화 맥락에 맞춰 생성하도록 함
     await prisma.$transaction([
       prisma.user.update({
         where: { id: userId },
@@ -33,42 +30,15 @@ export async function POST(req: Request) {
         data: {
           companionId,
           sender: "me",
-          text: `🎁 [선물 전송] ${giftName}`
+          text: `🎁 [선물 전송] ${giftName}`,
+          isRead: false
         }
       })
     ]);
 
-    const companion = await prisma.companion.findUnique({ where: { id: companionId } });
-
-    const systemPrompt = `너의 이름은 ${companion?.name}야. 
-방금 나(사용자)에게서 [${giftName}]을(를) 선물 받았어.
-너의 성격(${companion?.personality})에 맞춰서 반응해줘.`;
-
-    const aiRes = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'system', content: systemPrompt }],
-      temperature: 0.8,
-      max_tokens: 150,
-    });
-
-    const reply = aiRes.choices[0].message.content || "우와! 고마워!";
-
-    const savedReply = await prisma.message.create({
-      data: {
-        companionId,
-        sender: "companion",
-        text: reply
-      }
-    });
-
     return NextResponse.json({
       success: true,
-      reply: {
-        id: savedReply.id,
-        sender: "companion",
-        text: savedReply.text,
-        time: new Date(savedReply.createdAt).toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" })
-      }
+      message: "선물이 전달되었습니다. 곧 메이트의 답장이 도착합니다."
     });
 
   } catch (error) {

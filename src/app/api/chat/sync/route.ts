@@ -10,104 +10,143 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+function sanitizeText(text: string) {
+  let sanitized = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+  sanitized = sanitized.replace(/\^[\^]*[\.]?\^/g, ''); 
+  sanitized = sanitized.replace(/[:;][\)-DPp]/g, '');   
+  sanitized = sanitized.replace(/\.+$/g, ''); 
+  return sanitized.trim();
+}
+
+function forceSplit(text: string) {
+  if (text.includes('[SEP]')) return text.split('[SEP]').map(s => s.trim()).filter(s => s);
+  const segments = text.split(/(?<=[?!])\s+/).map(s => s.trim()).filter(s => s);
+  return segments.length > 0 ? segments : [text];
+}
+
 export async function GET(req: Request) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
-    const companionId = searchParams.get('companionId');
-    if (!companionId) return NextResponse.json({ error: "CompanionId required" }, { status: 400 });
+    const targetCompanionId = searchParams.get('companionId');
+    
+    const companions = targetCompanionId 
+      ? await prisma.companion.findMany({ where: { id: targetCompanionId, userId: session.userId } })
+      : await prisma.companion.findMany({ where: { userId: session.userId } });
 
-    const companion = await prisma.companion.findFirst({ 
-      where: { id: companionId, userId: session.userId } 
-    });
-    if (!companion) return NextResponse.json({ error: "Companion not found" }, { status: 404 });
+    if (companions.length === 0) return NextResponse.json({ hasUpdate: false });
 
     const now = new Date();
-    const activity = getCurrentActivity(now, companion.mbti);
+    let totalUpdates = 0;
+    const allNewMessages: any[] = [];
 
-    // 1. 현재 DB의 읽음 상태 확인
-    const unreadCount = await prisma.message.count({
-      where: { companionId, sender: "me", isRead: false }
-    });
-
-    let readUpdated = false;
-
-    // 안 읽은 게 있다면 즉시 읽음 처리
-    if (unreadCount > 0) {
-      await prisma.message.updateMany({
-        where: { companionId, sender: "me", isRead: false },
-        data: { isRead: true }
-      });
-      readUpdated = true;
-    }
-
-    // 2. 답변 생성 필요 여부 확인
-    const lastMsg = await prisma.message.findFirst({
-      where: { companionId },
-      orderBy: { createdAt: "desc" }
-    });
-
-    // 마지막 메시지가 유저꺼라면 답장을 해야함
-    if (lastMsg && lastMsg.sender === "me") {
-      // 답변 생성 로직 진행
+    for (const companion of companions) {
+      const activity = getCurrentActivity(now, companion.mbti);
+      
       const history = await prisma.message.findMany({
-        where: { companionId },
+        where: { companionId: companion.id },
         orderBy: { createdAt: "desc" },
-        take: 30
+        take: 20
       });
 
-      const conversationHistory = history.reverse().map(msg => ({
-        role: msg.sender === "me" ? "user" : "assistant",
-        content: msg.text
-      })) as OpenAI.Chat.Completions.ChatCompletionMessageParam[];
+      const lastMsg = history[0];
+      const diffSeconds = lastMsg ? (now.getTime() - new Date(lastMsg.createdAt).getTime()) / 1000 : 0;
+      
+      // Phase 16: 생각할 시간 부여 (Thoughtful Wait)
+      // 사용자가 마지막 메시지(me)를 보낸 후 4초가 지나지 않았다면 아직 입력을 기다림
+      const isWaitingForUser = lastMsg && lastMsg.sender === "me" && diffSeconds < 4;
 
-      const systemPrompt = `너의 이름은 ${companion.name}야. 연인처럼 다정하게 답해줘. [SEP]를 써서 말풍선을 나눠줘.`;
-
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'system', content: systemPrompt }, ...conversationHistory],
-        temperature: 0.9,
-      });
-
-      const aiReply = response.choices[0].message.content || "응!";
-      const bubbles = aiReply.split("[SEP]").map(b => b.trim()).filter(b => b);
-
-      const savedMessages = [];
-      for (const text of bubbles) {
-        const msg = await prisma.message.create({
-          data: { companionId, sender: "companion", text, isRead: true }
-        });
-        savedMessages.push({
-          id: msg.id,
-          sender: "companion",
-          text: msg.text,
-          time: new Date(msg.createdAt).toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" })
+      // 안 읽은 메시지 읽음 처리 (생각 시간이 끝났을 때만)
+      if (targetCompanionId === companion.id && !isWaitingForUser) {
+        await prisma.message.updateMany({
+          where: { companionId: companion.id, sender: "me", isRead: false },
+          data: { isRead: true }
         });
       }
 
-      return NextResponse.json({ 
-        hasUpdate: true, 
-        readUpdated: true, 
-        newMessages: savedMessages 
-      });
+      let isProactive = false;
+      if (lastMsg && lastMsg.sender === "companion" && diffSeconds > 30) {
+          let companionCombo = 0;
+          for (const m of history) {
+              if (m.sender === "companion") companionCombo++;
+              else break;
+          }
+          if (companionCombo < 3) isProactive = true;
+      }
+
+      // 답장 생성 조건: 대기 시간이 지났고 (유저가 보냈거나 선톡 타이밍이거나)
+      if (!isWaitingForUser && ((lastMsg && lastMsg.sender === "me") || isProactive)) {
+        const user = await prisma.user.findUnique({ where: { id: session.userId } });
+        const reversedHistory = [...history].reverse();
+        const messages: any[] = [];
+        const intimacy = companion.intimacy;
+        const userName = user?.name || "사용자";
+
+        let currentCallSign = companion.preferredCallSign;
+        if (currentCallSign === "이름") currentCallSign = `${userName}야`;
+        if (currentCallSign === "(이름)오빠") currentCallSign = `${userName}오빠`;
+
+        const systemPrompt = `너의 이름은 ${companion.name}야. 나(사용자)의 연인 페르소나.
+현재 활동: ${activity.name}, 호감도: ${intimacy}.
+호칭 고정: "${currentCallSign}"
+
+[중요 지침]
+1. 의성어(ㅋㅋㅋ, ㅎㅎㅎ)는 4문장당 1번 꼴(25%)로만 써. 남발 절대 금지.
+2. 이모지 사용 절대 금지. 문장 끝 온점(.) 절대 금지. [SEP] 분할 필수.
+3. 🎁 [선물 전송] 감지 시: 짧고 쿨하게 "고마워 ㅋㅋㅋ" 정도로만 반응해. 비서처럼 길게 감동받지 마.
+
+[말투 예시]
+- "오 ㅋㅋㅋ" [SEP] "맛있겠당"
+- "나 아까 일어났어" [SEP] "배고픈데 머먹지"`;
+
+        messages.push({ role: "system", content: systemPrompt });
+        for (const msg of reversedHistory) {
+            messages.push({
+              role: msg.sender === "me" ? "user" : "assistant",
+              content: msg.text || (msg.imageUrl ? "사진을 보냈어." : "")
+            });
+        }
+
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: messages,
+          temperature: 0.85,
+        });
+
+        const rawReply = response.choices[0].message.content || "음";
+        const filteredReply = sanitizeText(rawReply);
+        const bubbles = forceSplit(filteredReply);
+
+        for (const text of bubbles) {
+          const isMsgRead = targetCompanionId === companion.id;
+          const msg = await prisma.message.create({
+            data: { 
+              companionId: companion.id, 
+              sender: "companion", 
+              text, 
+              isRead: isMsgRead 
+            }
+          });
+          
+          if (targetCompanionId === companion.id) {
+            allNewMessages.push({
+              id: msg.id,
+              sender: "companion",
+              text: msg.text,
+              time: new Date(msg.createdAt).toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" })
+            });
+          }
+        }
+        totalUpdates++;
+      }
     }
 
-    // 답장할 건 없지만, 만약 DB가 모두 읽음 상태라면 클라이언트에게도 업데이트 신호를 보냄
-    // (이게 포인트입니다! 상태 꼬임 방지)
-    if (readUpdated || unreadCount === 0) {
-      return NextResponse.json({ 
-        hasUpdate: true, 
-        readUpdated: true, 
-        newMessages: [] 
-      });
-    }
-
-    return NextResponse.json({ hasUpdate: false });
+    return NextResponse.json({ hasUpdate: totalUpdates > 0, newMessages: allNewMessages });
 
   } catch (error: any) {
-    console.error("Sync API Error:", error);
+    console.error("Sync Error with Wait Time:", error);
     return NextResponse.json({ hasUpdate: false });
   }
 }

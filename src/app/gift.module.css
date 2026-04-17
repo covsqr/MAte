@@ -48,6 +48,21 @@
   margin-bottom: 20px;
 }
 
+.paymentLoadingBox {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 30px 40px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 4000;
+}
+
 .giftItem {
   border: 1px solid #f1f3f5;
   border-radius: 12px;
