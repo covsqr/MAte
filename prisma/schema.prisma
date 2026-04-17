@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  companions Companion[]
+}
+
+model Companion {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  age         Int
+  gender      String
+  mbti        String
+  personality String 
+  interests   String 
+  relationship String 
+  intimacy    Int      @default(0)
+  lastInteractionAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id])
+  messages Message[]
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  companionId String
+  sender      String   // "me" or "companion"
+  text        String
+  createdAt   DateTime @default(now())
+
+  companion Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+}

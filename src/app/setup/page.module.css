@@ -1,0 +1,86 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background-color: var(--theme-bg);
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  margin-top: 20px;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.input {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background-color: #f8f9fa;
+  font-size: 1rem;
+  transition: all 0.2s;
+  color: var(--text-primary);
+}
+
+.input:focus {
+  border-color: #7A28CB;
+  background-color: #ffffff;
+  outline: none;
+}
+
+.select {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background-color: #f8f9fa;
+  font-size: 1rem;
+  appearance: none;
+  color: var(--text-primary);
+}
+
+.button {
+  margin-top: 20px;
+  margin-bottom: 50px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--bubble-user-gradient); /* Instagram like gradient */
+  color: white;
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+.button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
