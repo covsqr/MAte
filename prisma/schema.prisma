@@ -4,12 +4,17 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
+  username  String   @unique
+  password  String
+  phone     String?
+  email     String?  @unique
   name      String?
+  points    Int      @default(5000) // 1포인트 = 10원. 5000포인트 = 5만원
   createdAt DateTime @default(now())
 
   companions Companion[]
@@ -27,6 +32,8 @@ model Companion {
   relationship String 
   intimacy    Int      @default(0)
   lastInteractionAt DateTime @default(now())
+  startedAt   DateTime @default(now())
+  birthday    String?  // MM-DD 형식
   createdAt   DateTime @default(now())
 
   user     User      @relation(fields: [userId], references: [id])
@@ -38,6 +45,7 @@ model Message {
   companionId String
   sender      String   // "me" or "companion"
   text        String
+  isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   companion Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)

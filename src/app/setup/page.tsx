@@ -14,7 +14,8 @@ export default function SetupPage() {
     mbti: "ENFP",
     personality: "다정하고 장난끼 많은 성격. 가끔 엉뚱하다.",
     interests: "카페 투어, 넷플릭스 탐방, 사진 찍기",
-    relationship: "연인"
+    relationship: "연인",
+    birthday: "05-20"
   });
   const [loading, setLoading] = useState(false);
 
@@ -34,6 +35,9 @@ export default function SetupPage() {
       if (res.ok) {
         // 성공 시 메인 채팅창으로
         router.push("/");
+      } else if (res.status === 401) {
+        alert("세션이 만료되었습니다. 다시 가입해 주세요.");
+        router.push("/signup");
       } else {
         alert("프로필 설정에 실패했습니다.");
       }
@@ -86,6 +90,11 @@ export default function SetupPage() {
         <div className={styles.formGroup}>
           <label className={styles.label}>주요 관심사</label>
           <input className={styles.input} name="interests" placeholder="예: 게임, 요리, 산책" value={formData.interests} onChange={handleChange} required />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label className={styles.label}>메이트 생일 (MM-DD)</label>
+          <input className={styles.input} name="birthday" placeholder="예: 05-20" value={formData.birthday} onChange={handleChange} required />
         </div>
 
         <div className={styles.formGroup}>

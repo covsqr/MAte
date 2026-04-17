@@ -1,0 +1,144 @@
+.modalOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal {
+  width: 100%;
+  background-color: white;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding: 24px;
+  animation: slideUp 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modalTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.userPoints {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #7A28CB;
+}
+
+.giftGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.giftItem {
+  border: 1px solid #f1f3f5;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.giftItem:hover {
+  background-color: #f8f9fa;
+  border-color: #7A28CB;
+}
+
+.giftIcon {
+  font-size: 2rem;
+}
+
+.giftName {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.giftPrice {
+  font-size: 0.8rem;
+  color: #868e96;
+}
+
+.ddayBadge {
+  font-size: 0.75rem;
+  color: #FF007F;
+  background: #FFF0F6;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+/* KakaoTalk Style Gift Message */
+.giftMessageBubble {
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  width: 220px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  margin: 4px 0;
+}
+
+.giftHeader {
+  background-color: #fee500;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #3c1e1e;
+}
+
+.giftBody {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.giftThumb {
+  font-size: 1.5rem;
+  background: #f8f9fa;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.giftInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.giftTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2b2b2b;
+}
+
+.giftStatus {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 2px;
+}

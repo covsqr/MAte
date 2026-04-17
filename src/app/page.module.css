@@ -52,7 +52,7 @@
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 6px;
 }
 
 .dateSeparator {
@@ -139,16 +139,32 @@
   border-bottom-left-radius: 4px;
 }
 
+.timeWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.me .timeWrapper {
+  align-items: flex-end;
+}
+
+.companion .timeWrapper {
+  align-items: flex-start;
+}
+
+.unreadStatus {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #FFEB33; /* 카톡 노란색 느낌 */
+  line-height: 1;
+}
+
 .time {
   font-size: 0.65rem;
   color: var(--text-secondary);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.messageRow:hover .time,
-.messageRow:active .time {
-  opacity: 1;
+  white-space: nowrap;
 }
 
 .inputArea {
