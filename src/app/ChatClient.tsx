@@ -90,13 +90,13 @@ export default function ChatClient({ companion, initialMessages, userPoints: ini
       // 내 메시지의 '1'을 즉시 지움 (지수가 읽기 시작하자마자)
       setMessages((prev: Message[]) => prev.map(m => m.sender === "me" ? { ...m, isRead: true } : m));
 
-      // 1. 읽기 단계: 백엔드에서 이미 딜레이를 관리하므로 프론트엔드는 아주 짧게만 연출
-      const waitTime = isProcessing ? 100 : 300;
+      // 1. 읽기 단계: 백엔드 딜레이 + 약간의 사람다운 읽는 시간 추가
+      const waitTime = isProcessing ? 200 : 800;
       await new Promise(resolve => setTimeout(resolve, waitTime));
 
-      // 2. 타이핑 단계: 칼답을 위해 더 빠르게 연출 (글자당 30ms, 최대 1.5초)
+      // 2. 타이핑 단계: 너무 빠르지 않게 살짝 너프 (글자당 40ms, 최대 2.5초)
       setIsAIThinking(true);
-      const typingTime = Math.min(1500, Math.max(400, nextMsg.text.length * 30)); 
+      const typingTime = Math.min(2500, Math.max(600, nextMsg.text.length * 40)); 
       await new Promise(resolve => setTimeout(resolve, typingTime));
 
       // 3. 메시지 노출 (중복 ID 방어)

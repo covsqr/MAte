@@ -110,8 +110,8 @@ export async function GET(req: Request) {
           const gapSeconds = prevMsg ? (new Date(lastMsg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime()) / 1000 : Infinity;
           
           if (gapSeconds < 120) {
-              // 대화 중 (이전 메시지와의 간격이 2분 이내): 1초 후 칼답
-              requiredDelay = 1;
+              // 대화 중 (이전 메시지와의 간격이 2분 이내): 3초 후 칼답 (너무 빠르지 않게 너프)
+              requiredDelay = 3;
           } else {
               // 대화 끊김 (2분 이상 지남 혹은 첫 메시지): 10~30초 지연 후 읽음 및 답장
               const randomOffset = lastMsg.id.charCodeAt(lastMsg.id.length - 1) % 21; // 0~20
