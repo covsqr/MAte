@@ -15,9 +15,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   // DB에 유저가 실제로 존재하는지 확인 (stale 세션 방지)
   const dbUser = await prisma.user.findUnique({ where: { id: session.userId } });
   if (!dbUser) {
-    const { cookies } = await import('next/headers');
-    (await cookies()).delete('session');
-    redirect("/login");
+    redirect("/api/auth/logout");
   }
 
   const { companionId } = await searchParams;
