@@ -32,8 +32,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error("Signup Error:", err);
-    return NextResponse.json({ error: "회원가입 처리 중 오류 발생" }, { status: 500 });
+    return NextResponse.json({ error: "회원가입 오류: " + (err.message || String(err)) }, { status: 500 });
   }
 }
