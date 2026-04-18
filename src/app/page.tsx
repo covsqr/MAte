@@ -12,6 +12,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const session = await getSession();
   if (!session) redirect("/login");
 
+  // DB에 유저가 실제로 존재하는지 확인 (stale 세션 방지)
+  const dbUser = await prisma.user.findUnique({ where: { id: session.userId } });
+  if (!dbUser) {
+    const { cookies } = await import('next/headers');
+    (await cookies()).delete('session');
+    redirect("/login");
+  }
+
   const { companionId } = await searchParams;
 
   // 1. companionId가 없는 경우 -> 진짜 홈 화면(Dashboard) 렌더링

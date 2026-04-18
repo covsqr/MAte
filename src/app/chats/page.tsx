@@ -5,9 +5,20 @@ import Link from "next/link";
 import styles from "./chats.module.css";
 import { ChevronLeft, MessageCircle, Settings, User } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ChatsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  // 세션 userId가 실제 DB에 존재하는지 검증 (DB 마이그레이션 후 stale 세션 방지)
+  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  if (!user) {
+    // 유효하지 않은 세션 → 로그아웃 후 로그인 페이지로
+    const { cookies } = await import('next/headers');
+    (await cookies()).delete('session');
+    redirect("/login");
+  }
 
   const companions = await prisma.companion.findMany({
     where: { userId: session.userId },
