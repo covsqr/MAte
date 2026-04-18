@@ -90,13 +90,13 @@ export default function ChatClient({ companion, initialMessages, userPoints: ini
       // 내 메시지의 '1'을 즉시 지움 (지수가 읽기 시작하자마자)
       setMessages((prev: Message[]) => prev.map(m => m.sender === "me" ? { ...m, isRead: true } : m));
 
-      // 1. 읽기 단계: 첫 메시지는 길게, 연속된 메시지([SEP] 분할)는 아주 짧게
-      const waitTime = isProcessing ? 500 : (1000 + Math.random() * 1500);
+      // 1. 읽기 단계: 백엔드에서 이미 딜레이를 관리하므로 프론트엔드는 아주 짧게만 연출
+      const waitTime = isProcessing ? 100 : 300;
       await new Promise(resolve => setTimeout(resolve, waitTime));
 
-      // 2. 타이핑 단계: 짧은 문구는 더 빠르게 타이핑 연출
+      // 2. 타이핑 단계: 칼답을 위해 더 빠르게 연출 (글자당 30ms, 최대 1.5초)
       setIsAIThinking(true);
-      const typingTime = Math.min(4000, Math.max(800, nextMsg.text.length * 70)); 
+      const typingTime = Math.min(1500, Math.max(400, nextMsg.text.length * 30)); 
       await new Promise(resolve => setTimeout(resolve, typingTime));
 
       // 3. 메시지 노출 (중복 ID 방어)
@@ -145,7 +145,7 @@ export default function ChatClient({ companion, initialMessages, userPoints: ini
       }
     };
 
-    const interval = setInterval(syncWithMate, 4000);
+    const interval = setInterval(syncWithMate, 2000); // 폴링 주기를 2초로 단축하여 칼답 느낌 강화
     return () => clearInterval(interval);
   }, [isMounted, companion.id]); // messages 의존성 제거
 
