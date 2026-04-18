@@ -38,6 +38,7 @@ model Companion {
   intimacy    Int      @default(0)
   mirroringPattern String? // 사용자의 말투 특징을 저장 (Phase 22)
   messageCount Int      @default(0) // 말투 분석을 위한 누적 메시지 수
+  isReplying   Boolean  @default(false) // 동시 응답 방지 락 (Phase 26)
   lastInteractionAt DateTime @default(now())
   startedAt   DateTime @default(now())
   birthday    String?  // MM-DD 형식

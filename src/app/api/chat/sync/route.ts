@@ -124,6 +124,18 @@ export async function GET(req: Request) {
       }
 
       if (!isWaitingForUser && ((lastMsg && lastMsg.sender === "me") || isProactive)) {
+
+        // Phase 26: 동시 응답 방지 락 - 이미 응답 중이면 스킵
+        if (companion.isReplying) continue;
+
+        // 락 획득 (atomic update with condition check)
+        const lockResult = await prisma.companion.updateMany({
+          where: { id: companion.id, isReplying: false },
+          data: { isReplying: true }
+        });
+        if (lockResult.count === 0) continue; // 다른 요청이 먼저 락을 획득함
+
+        try {
         const user = await prisma.user.findUnique({ where: { id: session.userId } });
         const reversedHistory = [...history].reverse();
         const intimacy = companion.intimacy;
@@ -227,6 +239,13 @@ ${companion.personality}
         });
 
         totalUpdates++;
+        } finally {
+          // 성공/실패 관계없이 락 해제
+          await prisma.companion.update({
+            where: { id: companion.id },
+            data: { isReplying: false }
+          });
+        }
       }
     }
 
