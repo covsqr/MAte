@@ -25,14 +25,14 @@ export async function POST(req: Request) {
 
     const extension = file.name.split('.').pop();
     const fileName = `${uuidv4()}.${extension}`;
-    
+
     // Windows와 Linux 공용 경로 처리
     const uploadDir = join(process.cwd(), 'public', 'uploads');
-    
+
     if (!existsSync(uploadDir)) {
-        await mkdir(uploadDir, { recursive: true });
+      await mkdir(uploadDir, { recursive: true });
     }
-    
+
     const filePath = join(uploadDir, fileName);
     await writeFile(filePath, buffer);
     const imageUrl = `/uploads/${fileName}`;
@@ -40,27 +40,27 @@ export async function POST(req: Request) {
     console.log(`[Image Upload] Type: ${type}, ID: ${companionId}, URL: ${imageUrl}`);
 
     if (type === 'profile' && companionId) {
-        // 프로필 업데이트 시 session.userId 체크 강화
-        const updated = await prisma.companion.update({
-            where: { 
-              id: companionId,
-              userId: session.userId 
-            },
-            data: { profileImage: imageUrl }
-        });
-        console.log(`[DB Update] Companion ${updated.id} profileImage set to ${imageUrl}`);
-        return NextResponse.json({ success: true, imageUrl });
+      // 프로필 업데이트 시 session.userId 체크 강화
+      const updated = await prisma.companion.update({
+        where: {
+          id: companionId,
+          userId: session.userId
+        },
+        data: { profileImage: imageUrl }
+      });
+      console.log(`[DB Update] Companion ${updated.id} profileImage set to ${imageUrl}`);
+      return NextResponse.json({ success: true, imageUrl });
     } else if (companionId) {
-        const saved = await prisma.message.create({
-          data: {
-            companionId,
-            sender: "me",
-            text: "",
-            imageUrl,
-            isRead: false
-          }
-        });
-        return NextResponse.json({ success: true, imageUrl, id: saved.id });
+      const saved = await prisma.message.create({
+        data: {
+          companionId,
+          sender: "me",
+          text: "",
+          imageUrl,
+          isRead: false
+        }
+      });
+      return NextResponse.json({ success: true, imageUrl, id: saved.id });
     }
 
     return NextResponse.json({ success: true, imageUrl });

@@ -1,6 +1,7 @@
+// 에디터 빨간 줄 제거용 리프레시 주석
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession, hashPassword, verifyPassword } from '@/lib/auth';
+import { getSession, hashPassword, comparePassword } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     // 현재 비밀번호 확인
-    const isCorrect = await verifyPassword(currentPassword, user.password);
+    const isCorrect = await comparePassword(currentPassword, user.password);
     if (!isCorrect) {
       return NextResponse.json({ error: "현재 비밀번호가 일치하지 않습니다." }, { status: 400 });
     }
