@@ -103,7 +103,23 @@ export async function GET(req: Request) {
 
       const lastMsg = history[0];
       const diffSeconds = lastMsg ? (now.getTime() - new Date(lastMsg.createdAt).getTime()) / 1000 : 0;
-      const isWaitingForUser = lastMsg && lastMsg.sender === "me" && diffSeconds < 4;
+      
+      let requiredDelay = 4;
+      if (lastMsg && lastMsg.sender === "me") {
+          const prevMsg = history[1];
+          const gapSeconds = prevMsg ? (new Date(lastMsg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime()) / 1000 : Infinity;
+          
+          if (gapSeconds < 120) {
+              // 대화 중 (이전 메시지와의 간격이 2분 이내): 1초 후 칼답
+              requiredDelay = 1;
+          } else {
+              // 대화 끊김 (2분 이상 지남 혹은 첫 메시지): 10~30초 지연 후 읽음 및 답장
+              const randomOffset = lastMsg.id.charCodeAt(lastMsg.id.length - 1) % 21; // 0~20
+              requiredDelay = 10 + randomOffset;
+          }
+      }
+
+      const isWaitingForUser = lastMsg && lastMsg.sender === "me" && diffSeconds < requiredDelay;
 
       if (targetCompanionId === companion.id && !isWaitingForUser) {
         await prisma.message.updateMany({
@@ -119,21 +135,18 @@ export async function GET(req: Request) {
               if (m.sender === "companion") companionCombo++;
               else break;
           }
-          // 3회 미만 콤보이며, 40% 확률로만 선톡 시도 (Phase 22.1)
           if (companionCombo < 3 && Math.random() < 0.4) isProactive = true;
       }
 
       if (!isWaitingForUser && ((lastMsg && lastMsg.sender === "me") || isProactive)) {
 
-        // Phase 26: 동시 응답 방지 락 - 이미 응답 중이면 스킵
         if (companion.isReplying) continue;
 
-        // 락 획득 (atomic update with condition check)
         const lockResult = await prisma.companion.updateMany({
           where: { id: companion.id, isReplying: false },
           data: { isReplying: true }
         });
-        if (lockResult.count === 0) continue; // 다른 요청이 먼저 락을 획득함
+        if (lockResult.count === 0) continue; 
 
         try {
         const user = await prisma.user.findUnique({ where: { id: session.userId } });
