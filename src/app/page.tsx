@@ -2,6 +2,11 @@ import { prisma } from "@/lib/prisma";
 import ChatClient from "./ChatClient";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import styles from "./home.module.css";
+import { MessageSquare, Settings } from "lucide-react";
+
+export const dynamic = 'force-dynamic';
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ companionId?: string }> }) {
   const session = await getSession();
@@ -9,16 +14,36 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
   const { companionId } = await searchParams;
 
-  // 특정 세션Id가 있으면 그것을, 없으면 가장 최근 메이트를 불러옴
-  const companion = companionId 
-    ? await prisma.companion.findFirst({ where: { id: companionId, userId: session.userId } })
-    : await prisma.companion.findFirst({
-        where: { userId: session.userId },
-        orderBy: { createdAt: "desc" }
-      });
+  // 1. companionId가 없는 경우 -> 진짜 홈 화면(Dashboard) 렌더링
+  if (!companionId) {
+    return (
+      <main className={styles.container}>
+        <div className={styles.logoArea}>
+          <h1 className={styles.logoText}>MAte</h1>
+          <p className={styles.subText}>ALWAYS BY YOUR SIDE</p>
+        </div>
+
+        <div className={styles.menuArea}>
+          <Link href="/chats" className={`${styles.btn} ${styles.btnPrimary}`}>
+            <MessageSquare className={styles.icon} />
+            <span>채팅방 가기</span>
+          </Link>
+          <Link href="/settings" className={styles.btn}>
+            <Settings className={styles.icon} />
+            <span>설정</span>
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  // 2. companionId가 있는 경우 -> 기존 대화방 로직 수행
+  const companion = await prisma.companion.findFirst({ 
+    where: { id: companionId, userId: session.userId } 
+  });
 
   if (!companion) {
-    redirect("/setup");
+    redirect("/chats"); // 없으면 목록으로 보냄
   }
 
   // 채팅방 입장 시 해당 메이트가 보낸 모든 메시지를 읽음 처리
@@ -37,9 +62,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     take: 200
   });
 
-  // 최신 50개를 가져왔으므로 다시 시간순(asc)으로 뒤집어서 전달
   const sortedMessages = messages.reverse();
-
   const user = await prisma.user.findUnique({
     where: { id: session.userId }
   });

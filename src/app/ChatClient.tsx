@@ -133,12 +133,11 @@ export default function ChatClient({ companion, initialMessages, userPoints: ini
         if (data.hasUpdate && data.newMessages?.length > 0) {
           // 큐에 추가할 때, 현재 메시지 목록(prevMessages)과 비교하여 중복 제거
           setIncomingQueue(prevQueue => {
-            // 현재 메시지 상태를 직접 가져올 수 없으므로, 
-            // 큐에 넣기 전에는 ID 리스트만 관리하거나, 렌더링 시점에 최종 필터링을 하도록 로직 보강
-            const newItems = data.newMessages.filter((nm: any) => 
-              !prevQueue.some(p => p.id === nm.id)
+            // 현재 채팅방의 메이트가 보낸 메시지만 필터링
+            const filtered = data.newMessages.filter((nm: any) => 
+              nm.companionId === companion.id && !prevQueue.some(p => p.id === nm.id)
             );
-            return [...prevQueue, ...newItems];
+            return [...prevQueue, ...filtered];
           });
         }
       } catch (err) {
@@ -286,9 +285,7 @@ export default function ChatClient({ companion, initialMessages, userPoints: ini
     }
   };
 
-  const profileImage = companion.gender === 'male'
-    ? "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80"
-    : "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80";
+  const profileImage = companion.profileImage || "/default_avatar.png";
 
   if (!isMounted) return null;
 

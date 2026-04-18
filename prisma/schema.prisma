@@ -33,7 +33,10 @@ model Companion {
   relationship String 
   speechStyle String   @default("반말") // "반말" 또는 "존댓말"
   preferredCallSign String // 나를 어떻게 부를지 (오빠, 자기야 등)
+  profileImage String? // 커스텀 프로필 이미지 경로
   intimacy    Int      @default(0)
+  mirroringPattern String? // 사용자의 말투 특징을 저장 (Phase 22)
+  messageCount Int      @default(0) // 말투 분석을 위한 누적 메시지 수
   lastInteractionAt DateTime @default(now())
   startedAt   DateTime @default(now())
   birthday    String?  // MM-DD 형식

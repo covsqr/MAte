@@ -62,17 +62,6 @@ export default async function RechargePage() {
           </div>
         </div>
       </div>
-
-      <nav className={styles.bottomNav}>
-        <Link href="/chats" className={styles.navItem}>
-          <MessageCircle />
-          <span>채팅</span>
-        </Link>
-        <Link href="/recharge" className={styles.navItemActive}>
-          <User />
-          <span>포인트</span>
-        </Link>
-      </nav>
     </div>
   );
 }

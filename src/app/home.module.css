@@ -1,0 +1,65 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  padding: 20px;
+}
+
+.logoArea {
+  margin-bottom: 80px;
+  text-align: center;
+}
+
+.logoText {
+  font-size: 4rem;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  color: #000000;
+  margin: 0;
+}
+
+.subText {
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 8px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.menuArea {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #f2f2f7;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #1a1a1a;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.btnPrimary {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+}

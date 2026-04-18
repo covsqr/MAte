@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import styles from "./page.module.css";
+import { X, Camera } from "lucide-react";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -22,13 +24,39 @@ export default function SetupPage() {
     interests: "카페 투어, 넷플릭스 탐방, 사진 찍기",
     relationship: "연인",
     birthday: "05-20",
-    speechStyle: "반말", // "반말" or "존댓말"
-    preferredCallSign: "이름" // "이름", "자기야", "여보야", "오빠", "(이름)오빠"
+    speechStyle: "반말", 
+    preferredCallSign: "이름",
+    profileImage: "/default_avatar.png" // 기본 프사 적용
   });
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const body = new FormData();
+    body.append("file", file);
+
+    try {
+      const res = await fetch("/api/chat/image", {
+        method: "POST",
+        body
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFormData(prev => ({ ...prev, profileImage: data.imageUrl }));
+      }
+    } catch (err) {
+      alert("이미지 업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,12 +69,10 @@ export default function SetupPage() {
         body: JSON.stringify(formData)
       });
       if (res.ok) {
-        router.push("/");
-      } else if (res.status === 401) {
-        alert("세션이 만료되었습니다. 다시 가입해 주세요.");
-        router.push("/signup");
+        router.push("/chats");
       } else {
-        alert("프로필 설정에 실패했습니다.");
+        const data = await res.json();
+        alert(data.error || "프로필 설정에 실패했습니다.");
       }
     } catch (err) {
       alert("오류가 발생했습니다.");
@@ -57,10 +83,32 @@ export default function SetupPage() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>내 메이트 디자인하기 💖</h1>
-      <p className={styles.subtitle}>두 분의 설정을 입력해주세요. 메이트가 이 내용을 기억할 거예요.</p>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h1 className={styles.title} style={{ margin: 0 }}>메이트 디자인하기 💖</h1>
+        <Link href="/chats" style={{ color: '#333' }}>
+          <X size={24} />
+        </Link>
+      </header>
+      
+      <p className={styles.subtitle}>새로운 메이트를 디자인합니다. (10,000 P 소모됨)</p>
 
       <form onSubmit={handleSubmit} className={styles.form}>
+        {/* 프로필 이미지 섹션 */}
+        <section className={styles.section} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ position: 'relative', marginBottom: 15 }}>
+            <img 
+              src={formData.profileImage} 
+              alt="preview" 
+              style={{ width: 100, height: 100, borderRadius: 35, objectFit: 'cover', border: '2px solid #eee' }} 
+            />
+            <label style={{ position: 'absolute', bottom: 0, right: 0, background: '#fff', borderRadius: 20, padding: 8, cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+              <Camera size={18} />
+              <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+            </label>
+          </div>
+          <span style={{ fontSize: 13, color: '#888' }}>{uploading ? "업로드 중..." : "탭하여 프로필 사진 변경"}</span>
+        </section>
+
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>👤 내 프로필 (유저 정보)</h2>
           <div className={styles.formGrid}>
@@ -72,14 +120,6 @@ export default function SetupPage() {
               <label className={styles.label}>나이</label>
               <input type="number" className={styles.input} name="userAge" value={formData.userAge} onChange={handleChange} required />
             </div>
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>거주 지역</label>
-            <input className={styles.input} name="userLocation" placeholder="예: 서울 강남구" value={formData.userLocation} onChange={handleChange} required />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>나의 취미</label>
-            <input className={styles.input} name="userHobbies" value={formData.userHobbies} onChange={handleChange} placeholder="메이트와 공유할 취미를 적어주세요" required />
           </div>
         </section>
 
@@ -143,20 +183,10 @@ export default function SetupPage() {
             <label className={styles.label}>성격</label>
             <input className={styles.input} name="personality" placeholder="예: 다정하지만 가끔 츤데레" value={formData.personality} onChange={handleChange} required />
           </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>메이트의 관심사</label>
-            <input className={styles.input} name="interests" placeholder="예: 요리, 발레, 강아지" value={formData.interests} onChange={handleChange} required />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>메이트 생일 (MM-DD)</label>
-            <input className={styles.input} name="birthday" placeholder="예: 05-20" value={formData.birthday} onChange={handleChange} required />
-          </div>
         </section>
 
-        <button type="submit" className={styles.button} disabled={loading}>
-          {loading ? "메이트 생성 중..." : "설정 완료하고 채팅 시작"}
+        <button type="submit" className={styles.button} disabled={loading || uploading}>
+          {loading ? "메이트 생성 중..." : "결과 확인하고 채팅 시작"}
         </button>
       </form>
     </div>

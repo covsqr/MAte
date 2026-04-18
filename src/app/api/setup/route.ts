@@ -37,6 +37,7 @@ export async function POST(req: Request) {
         birthday: data.birthday,
         speechStyle: data.speechStyle || "반말",
         preferredCallSign: data.preferredCallSign || "이름",
+        profileImage: data.profileImage || "/default_avatar.png", // 프로필 이미지 추가
         intimacy: data.relationship === '오랜 연인' ? 150 : (data.relationship === '연인' ? 80 : (data.relationship === '썸' ? 30 : 0)),
         // 연인이면 랜덤한 과거 날짜로 설정
         startedAt: (data.relationship === '연인' || data.relationship === '오랜 연인')

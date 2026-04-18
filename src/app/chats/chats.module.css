@@ -17,9 +17,21 @@
   font-size: 1.1rem;
 }
 
+.headerLeft, .headerRight {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .icon {
   cursor: pointer;
   color: #333;
+  transition: opacity 0.2s;
+}
+
+.icon:hover {
+  opacity: 0.6;
 }
 
 .chatList {

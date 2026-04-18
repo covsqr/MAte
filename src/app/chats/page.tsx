@@ -30,19 +30,23 @@ export default async function ChatsPage() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <Link href="/">
-          <ChevronLeft className={styles.icon} />
-        </Link>
+        <div className={styles.headerLeft}>
+          <Link href="/">
+            <ChevronLeft className={styles.icon} />
+          </Link>
+        </div>
         <span className={styles.title}>채팅 목록</span>
-        <Settings className={styles.icon} />
+        <div className={styles.headerRight}>
+          <Link href="/settings">
+            <Settings className={styles.icon} />
+          </Link>
+        </div>
       </header>
 
       <div className={styles.chatList}>
         {companions.map(companion => {
           const lastMsg = companion.messages[0];
-          const profileImage = companion.gender === 'female'
-            ? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80"
-            : "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80";
+          const profileImage = companion.profileImage || "/default_avatar.png";
 
           return (
             <Link key={companion.id} href={`/?companionId=${companion.id}`} className={styles.chatItem}>
@@ -73,17 +77,6 @@ export default async function ChatsPage() {
           </div>
         )}
       </div>
-
-      <nav className={styles.bottomNav}>
-        <Link href="/chats" className={styles.navItemActive}>
-          <MessageCircle />
-          <span>채팅</span>
-        </Link>
-        <Link href="/recharge" className={styles.navItem}>
-          <User />
-          <span>포인트</span>
-        </Link>
-      </nav>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { existsSync } from 'fs';
 
 export async function POST(req: Request) {
   try {
@@ -13,9 +14,10 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get('file') as File;
     const companionId = formData.get('companionId') as string;
+    const type = formData.get('type') as string;
 
-    if (!file || !companionId) {
-      return NextResponse.json({ error: "File and companionId are required" }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: "File is required" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
@@ -23,31 +25,48 @@ export async function POST(req: Request) {
 
     const extension = file.name.split('.').pop();
     const fileName = `${uuidv4()}.${extension}`;
+    
+    // Windows와 Linux 공용 경로 처리
     const uploadDir = join(process.cwd(), 'public', 'uploads');
+    
+    if (!existsSync(uploadDir)) {
+        await mkdir(uploadDir, { recursive: true });
+    }
+    
     const filePath = join(uploadDir, fileName);
-
     await writeFile(filePath, buffer);
     const imageUrl = `/uploads/${fileName}`;
 
-    // DB에 메시지 기록
-    const saved = await prisma.message.create({
-      data: {
-        companionId,
-        sender: "me",
-        text: "", // 텍스트는 비어있음
-        imageUrl,
-        isRead: false
-      }
-    });
+    console.log(`[Image Upload] Type: ${type}, ID: ${companionId}, URL: ${imageUrl}`);
 
-    return NextResponse.json({ 
-      success: true, 
-      imageUrl,
-      id: saved.id 
-    });
+    if (type === 'profile' && companionId) {
+        // 프로필 업데이트 시 session.userId 체크 강화
+        const updated = await prisma.companion.update({
+            where: { 
+              id: companionId,
+              userId: session.userId 
+            },
+            data: { profileImage: imageUrl }
+        });
+        console.log(`[DB Update] Companion ${updated.id} profileImage set to ${imageUrl}`);
+        return NextResponse.json({ success: true, imageUrl });
+    } else if (companionId) {
+        const saved = await prisma.message.create({
+          data: {
+            companionId,
+            sender: "me",
+            text: "",
+            imageUrl,
+            isRead: false
+          }
+        });
+        return NextResponse.json({ success: true, imageUrl, id: saved.id });
+    }
 
-  } catch (error) {
+    return NextResponse.json({ success: true, imageUrl });
+
+  } catch (error: any) {
     console.error("Image upload error:", error);
-    return NextResponse.json({ error: "Failed to upload image" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to upload image: " + error.message }, { status: 500 });
   }
 }
